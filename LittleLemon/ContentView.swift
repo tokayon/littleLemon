@@ -5,20 +5,17 @@
 //  Created by Serge Sinkevych on 5/3/26.
 //
 
+import Foundation
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @AppStorage("isOnboardingCompleted") private var isOnboardingCompleted = false
 
-#Preview {
-    ContentView()
+    var body: some View {
+        if isOnboardingCompleted {
+            HomeView()
+        } else {
+            OnboardingView()
+        }
+    }
 }
