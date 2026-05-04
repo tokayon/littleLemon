@@ -13,25 +13,38 @@ struct OnboardingView: View {
     @AppStorage("firstName") private var firstName = ""
     @AppStorage("lastName") private var lastName = ""
     @AppStorage("email") private var email = ""
-    @AppStorage("phone") private var phone = ""
 
     @State private var page = 0
+
+    private var isCurrentPageValid: Bool {
+        switch page {
+        case 0:
+            return !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case 1:
+            return !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case 2:
+            return !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        default:
+            return false
+        }
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 logo
 
-                TabView(selection: $page) {
-                    welcomePage.tag(0)
-                    detailsPage.tag(1)
-                    finalPage.tag(2)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .always))
+                Spacer()
+
+                onboardingPage
+
+                Spacer()
 
                 Button {
                     if page < 2 {
-                        withAnimation { page += 1 }
+                        withAnimation {
+                            page += 1
+                        }
                     } else {
                         isOnboardingCompleted = true
                     }
@@ -40,14 +53,17 @@ struct OnboardingView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(LLTheme.yellow)
+                        .background(isCurrentPageValid ? LLTheme.yellow : Color.gray.opacity(0.3))
                         .foregroundColor(.black)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .disabled(!isCurrentPageValid)
                 .padding(.horizontal)
-                .disabled(page == 1 && (firstName.isEmpty || email.isEmpty))
+
+                pageIndicator
             }
             .padding(.vertical)
+            .navigationBarHidden(true)
         }
     }
 
@@ -55,6 +71,7 @@ struct OnboardingView: View {
         HStack(spacing: 8) {
             Image(systemName: "leaf.fill")
                 .foregroundColor(LLTheme.yellow)
+
             Text("LITTLE LEMON")
                 .tracking(3)
                 .font(.headline)
@@ -63,64 +80,79 @@ struct OnboardingView: View {
         .padding(.top, 24)
     }
 
-    private var welcomePage: some View {
-        VStack(spacing: 20) {
-            Text("Welcome to Little Lemon")
-                .font(.largeTitle.bold())
-                .multilineTextAlignment(.center)
+    @ViewBuilder
+    private var onboardingPage: some View {
+        switch page {
+        case 0:
+            inputPage(
+                title: "What is your first name?",
+                subtitle: "Please enter your first name to continue.",
+                placeholder: "First name",
+                text: $firstName,
+                keyboardType: .default,
+                autocapitalization: .words
+            )
 
-            Text("Fresh Mediterranean dishes delivered with a modern twist.")
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+        case 1:
+            inputPage(
+                title: "What is your last name?",
+                subtitle: "Please enter your last name.",
+                placeholder: "Last name",
+                text: $lastName,
+                keyboardType: .default,
+                autocapitalization: .words
+            )
+
+        case 2:
+            inputPage(
+                title: "What is your email address?",
+                subtitle: "We will use this for your Little Lemon profile.",
+                placeholder: "Email address",
+                text: $email,
+                keyboardType: .emailAddress,
+                autocapitalization: .never
+            )
+
+        default:
+            EmptyView()
         }
-        .padding()
     }
 
-    private var detailsPage: some View {
+    private func inputPage(
+        title: String,
+        subtitle: String,
+        placeholder: String,
+        text: Binding<String>,
+        keyboardType: UIKeyboardType,
+        autocapitalization: TextInputAutocapitalization
+    ) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Tell us about yourself")
-                .font(.title.bold())
-
-            TextField("First name *", text: $firstName)
-                .textFieldStyle(.roundedBorder)
-
-            TextField("Last name", text: $lastName)
-                .textFieldStyle(.roundedBorder)
-
-            TextField("Email *", text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .textFieldStyle(.roundedBorder)
-
-            TextField("Phone number", text: $phone)
-                .keyboardType(.phonePad)
-                .textFieldStyle(.roundedBorder)
-
-            Text("* Required fields")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            Spacer()
-        }
-        .padding()
-    }
-
-    private var finalPage: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
+            Text(title)
+                .font(.largeTitle.bold())
                 .foregroundColor(LLTheme.green)
 
-            Text("You are ready to order")
-                .font(.largeTitle.bold())
-                .multilineTextAlignment(.center)
-
-            Text("Your profile details will be saved and available from the Profile screen.")
+            Text(subtitle)
                 .font(.title3)
-                .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
+
+            TextField(placeholder, text: text)
+                .keyboardType(keyboardType)
+                .textInputAutocapitalization(autocapitalization)
+                .autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+                .font(.title3)
         }
-        .padding()
+        .padding(.horizontal)
+    }
+
+    private var pageIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(index == page ? LLTheme.green : Color.gray.opacity(0.3))
+                    .frame(width: 10, height: 10)
+            }
+        }
+        .padding(.bottom, 12)
     }
 }
